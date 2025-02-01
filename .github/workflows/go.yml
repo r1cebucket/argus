@@ -26,17 +26,6 @@ jobs:
     name: Build
     runs-on: ${{ matrix.platform }}
     steps:
-      - name: Generate release timestamp
-        id: timestamp
-        run: echo "release_time=$(date +'%Y%m%d_%H%M%S')" >> $GITHUB_OUTPUT
-      
-      - name: Prerelease
-        uses: irongut/EditRelease@v1.2.0
-        with:
-          token: ${{ secrets.MY_TOKEN }}
-          id: ${{ steps.timestamp.outputs.release_time }}
-          prerelease: true
-
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -55,8 +44,8 @@ jobs:
           musl-target-format: $os-$musl-$arch
           out-dir: build
 
-      - name: Upload assets
-        uses: softprops/action-gh-release@v2
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
         with:
-          files: build/*
-          prerelease: false
+          name: zeus_${{ env.SHA }}_${{ matrix.target }}
+          path: build/*
