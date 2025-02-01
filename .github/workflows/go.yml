@@ -44,9 +44,20 @@ jobs:
           targets: ${{ matrix.target }}
           musl-target-format: $os-$musl-$arch
           out-dir: build
+          
+      - name: Generate release timestamp
+        id: timestamp
+        run: echo "release_time=$(date +'%Y%m%d_%H%M%S')" >> $GITHUB_OUTPUT
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
+      - name: Create Release
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          name: zeus_${{ env.SHA }}_${{ matrix.target }}
-          path: build/*
+          tag_name: release_${{ steps.timestamp.outputs.release_time }}
+          name: Release ${{ steps.timestamp.outputs.release_time }}
+          draft: false
+          prerelease: false
+          files: |
+            build/*
