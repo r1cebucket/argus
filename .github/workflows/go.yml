@@ -26,11 +26,15 @@ jobs:
     name: Build
     runs-on: ${{ matrix.platform }}
     steps:
+      - name: Generate release timestamp
+        id: timestamp
+        run: echo "release_time=$(date +'%Y%m%d_%H%M%S')" >> $GITHUB_OUTPUT
+      
       - name: Prerelease
         uses: irongut/EditRelease@v1.2.0
         with:
           token: ${{ secrets.MY_TOKEN }}
-          id: ${{ github.event.release.id }}
+          id: ${{ steps.timestamp.outputs.release_time }}
           prerelease: true
 
       - name: Checkout
