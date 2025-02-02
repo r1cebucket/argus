@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"os/signal"
 
 	"github.com/pelletier/go-toml/v2"
 	"github.com/robfig/cron/v3"
@@ -21,15 +22,11 @@ type Cron struct {
 type Task struct {
 	Name     string `json:"name" toml:"name"`
 	Schedule string `json:"schedule" toml:"schedule"`
+	Init     string `json:"init" toml:"init"`
 	Cmd      string `json:"cmd" toml:"cmd"`
 }
 
 func main() {
-	// os.ReadFile()
-
-	// c := cron.New()
-	// c.AddJob()
-	// c.AddFunc()
 	confData, err := os.ReadFile("conf.toml")
 	if err != nil {
 		log.Printf("read conf fail: %s\n", err)
@@ -44,9 +41,14 @@ func main() {
 
 	c := cron.New()
 	for _, t := range conf.CronConf.Tasks {
-		log.Println("add task")
+		if len(t.Init) > 0 {
+			init := exec.Command("sh", "-c", t.Init)
+			if err := init.Run(); err != nil {
+				log.Printf("task %s run init cmd fail: %s\n", t.Name, err)
+			}
+		}
+
 		c.AddFunc(t.Schedule, func() {
-			log.Println("task running")
 			cmd := exec.Command("sh", "-c", t.Cmd)
 			if err := cmd.Run(); err != nil {
 				log.Printf("task %s run fail: %s\n", t.Name, err)
@@ -56,5 +58,10 @@ func main() {
 
 	c.Start()
 
-	select {}
+	quitChan := make(chan os.Signal, 1)
+	signal.Notify(quitChan, os.Interrupt, os.Kill)
+	<-quitChan
+
+	c.Stop()
+	log.Println("zeus quit")
 }
