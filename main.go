@@ -96,6 +96,13 @@ func watcherStart(conf Watcher) []*fsnotify.Watcher {
 	watchers := make([]*fsnotify.Watcher, 0, len(conf.Tasks))
 
 	for _, t := range conf.Tasks {
+		if len(t.Init) > 0 {
+			init := exec.Command("sh", "-c", t.Init)
+			if err := init.Run(); err != nil {
+				log.Printf("watcher task %s run init cmd fail: %s\n", t.Name, err)
+			}
+		}
+
 		watcher, err := fsnotify.NewWatcher()
 		if err != nil {
 			log.Printf("watcher task %s create watcher err: %s\n", t.Name, err)
@@ -103,13 +110,6 @@ func watcherStart(conf Watcher) []*fsnotify.Watcher {
 		err = watcher.Add(t.Path)
 		if err != nil {
 			log.Printf("watcher task %s add path err: %s\n", t.Name, err)
-		}
-
-		if len(t.Init) > 0 {
-			init := exec.Command("sh", "-c", t.Init)
-			if err := init.Run(); err != nil {
-				log.Printf("watcher task %s run init cmd fail: %s\n", t.Name, err)
-			}
 		}
 
 		go func(t WatcherTask) {

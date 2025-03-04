@@ -6,7 +6,7 @@ log_level = 'info'
 name = "cron-demo"
 schedule = '@every 1s'
 init = """
-echo init >> test.txt
+echo init >> test-cron.txt
 """
 cmd = """
 echo hello >> test-cron.txt
@@ -19,7 +19,7 @@ log_level = 'info'
 name = "watcher-demo"
 path = './test.txt'
 init = """
-echo init >> test-watcher.txt
+echo init >> test.txt
 """
 cmd = """
 echo hello >> test-watcher.txt
