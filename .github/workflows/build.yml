@@ -47,5 +47,5 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: argos_${{ env.SHA }}_${{ matrix.target }}
+          name: argus_${{ env.SHA }}_${{ matrix.target }}
           path: build/*
