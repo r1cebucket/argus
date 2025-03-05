@@ -124,11 +124,11 @@ func watcherStart(conf Watcher) []*fsnotify.Watcher {
 					if err := cmd.Run(); err != nil {
 						log.Printf("watcher task %s run fail: %s\n", t.Name, err)
 					}
-				case _, ok := <-watcher.Errors:
+				case err, ok := <-watcher.Errors:
 					if !ok {
-						log.Printf("watcher task %s err: %s\n", t.Name, err)
 						return
 					}
+					log.Printf("watcher task %s err: %s\n", t.Name, err)
 				}
 			}
 		}(t)
