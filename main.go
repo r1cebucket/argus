@@ -22,10 +22,10 @@ type Cron struct {
 }
 
 type CronTask struct {
-	Name     string `json:"name" toml:"name"`
-	Schedule string `json:"schedule" toml:"schedule"`
-	Init     string `json:"init" toml:"init"`
-	Cmd      string `json:"cmd" toml:"cmd"`
+	Name     string   `json:"name" toml:"name"`
+	Schedule string   `json:"schedule" toml:"schedule"`
+	Init     []string `json:"init" toml:"init"`
+	Cmd      []string `json:"cmd" toml:"cmd"`
 }
 
 type Watcher struct {
@@ -34,10 +34,10 @@ type Watcher struct {
 }
 
 type WatcherTask struct {
-	Name string `json:"name" toml:"name"`
-	Path string `json:"path" toml:"path"`
-	Init string `json:"init" toml:"init"`
-	Cmd  string `json:"cmd" toml:"cmd"`
+	Name string   `json:"name" toml:"name"`
+	Path string   `json:"path" toml:"path"`
+	Init []string `json:"init" toml:"init"`
+	Cmd  []string `json:"cmd" toml:"cmd"`
 }
 
 func main() {
@@ -73,15 +73,13 @@ func cornStart(conf Cron) *cron.Cron {
 
 	for _, t := range conf.Tasks {
 		if len(t.Init) > 0 {
-			init := exec.Command("sh", "-c", t.Init)
-			if err := init.Run(); err != nil {
+			if err := execCmds(t.Init); err != nil {
 				log.Printf("cron task %s run init cmd fail: %s\n", t.Name, err)
 			}
 		}
 
 		c.AddFunc(t.Schedule, func() {
-			cmd := exec.Command("sh", "-c", t.Cmd)
-			if err := cmd.Run(); err != nil {
+			if err := execCmds(t.Cmd); err != nil {
 				log.Printf("cron task %s run fail: %s\n", t.Name, err)
 			}
 		})
@@ -97,8 +95,7 @@ func watcherStart(conf Watcher) []*fsnotify.Watcher {
 
 	for _, t := range conf.Tasks {
 		if len(t.Init) > 0 {
-			init := exec.Command("sh", "-c", t.Init)
-			if err := init.Run(); err != nil {
+			if err := execCmds(t.Init); err != nil {
 				log.Printf("watcher task %s run init cmd fail: %s\n", t.Name, err)
 			}
 		}
@@ -120,8 +117,7 @@ func watcherStart(conf Watcher) []*fsnotify.Watcher {
 						log.Printf("watcher task %s event not ok\n", t.Name)
 						return
 					}
-					cmd := exec.Command("sh", "-c", t.Cmd)
-					if err := cmd.Run(); err != nil {
+					if err := execCmds(t.Cmd); err != nil {
 						log.Printf("watcher task %s run fail: %s\n", t.Name, err)
 					}
 				case err, ok := <-watcher.Errors:
@@ -137,4 +133,14 @@ func watcherStart(conf Watcher) []*fsnotify.Watcher {
 	}
 
 	return watchers
+}
+
+func execCmds(cmdStrs []string) error {
+	for _, cmdStr := range cmdStrs {
+		cmd := exec.Command("sh", "-c", cmdStr)
+		if err := cmd.Run(); err != nil {
+			return err
+		}
+	}
+	return nil
 }
